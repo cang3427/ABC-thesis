@@ -88,10 +88,11 @@ def logUniformTransformPdf(theta, lower, upper):
     mass = np.prod(expTheta / (1 + expTheta)**2)
     return mass
     
-def gkABC(observedData, simulationSize, numComp, abcIterations, thetaInit, tol, lower = 0, upper = 10, covRw = [], printof = 10000):
+def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper = 10, covRw = [], printof = 10000):
 
+    numParams = 4
     if len(covRw) == 0:
-        covRw = np.identity(len(thetaInit)) * 0.1
+        covRw = np.identity(numParams) * 5
     
     # Fitted auxiliary model to the observed data
     auxiliaryModel = fitGaussianMixtureEM(observedData, numComp)  
@@ -99,36 +100,13 @@ def gkABC(observedData, simulationSize, numComp, abcIterations, thetaInit, tol, 
     # Calculating weight matrix which is the inverse of the observed information
     # using the MLEs
     weightMatrix = np.linalg.inv(gaussianMixtureInformation(observedData, auxiliaryModel))
-    observedStat = gaussianMixtureScore(observedData, auxiliaryModel)
-    numParams = len(thetaInit)    
     thetas = np.zeros((abcIterations, numParams))
     distances = np.zeros(abcIterations)
     
-    # Transforming initial uniform prior sample for numerical stability
-    thetaTransCurr = logUniformTransform(thetaInit, lower, upper)
-    distCurr = tol
-    thetas[0] = thetaTransCurr
-    distances[0] = distCurr
-    
-    for i in range(1, abcIterations):  
+    for i in range(abcIterations):  
         print(i)
-        # Generating (transformed) proposal parameters using the preceding accepted parameters 
-        thetaTransProp = np.random.multivariate_normal(0, covRw, 1)[0]
-        
-        # Probabilities of transformed prior samples
-        # currTransProb = logUniformTransformPdf(thetaTransCurr, lower, upper)
-        # propTransProb = logUniformTransformPdf(thetaTransProp, lower, upper)
-        
-        # More likely to early reject for small ratios i.e. when propProb << currProb. 
-        # If currProb is small, then this naturally gives higher weighting
-        # to the proposal as we favour moving away from low probability regions. 
-        # If currProb is large, then the proposal will have less weighting 
-        # and hence, a higher chance of rejection as we are 'happy'
-        # with our current accepted value. 
-        # if np.random.uniform(size = 1) > propTransProb / currTransProb:
-        #     thetas[i] = thetaTransCurr
-        #     distances[i] = distCurr
-        #     continue
+        # Generating (transformed) proposal parameters 
+        thetaTransProp = np.random.multivariate_normal(np.zeros(numParams), covRw, 1)[0]
         
         # Inverse transforming proposal to get the actual proposal parameters
         thetaProp = logUniformTransformInverse(thetaTransProp, lower, upper)
@@ -143,20 +121,11 @@ def gkABC(observedData, simulationSize, numComp, abcIterations, thetaInit, tol, 
         # (note that we  do not need to consider the observed summary statistic
         # as in this case it is 0 since the score is 0 at the MLE with the observed
         # data )
-        propDist = statistic @ weightMatrix @ statistic.T   
-        
-        # Accept proposal if (squared) distance is less than the threshold
-        # if (propDist <= tol):
-        #     thetaTransCurr = thetaTransProp
-        #     distCurr = propDist   
+        propDist = statistic @ weightMatrix @ statistic.T     
 
         # Store current values      
         thetas[i] = thetaProp
         distances[i] = propDist  
-    
-    # Inverse transform stored thetas to actual form
-    # for i in range(abcIterations):
-    #     thetas[i] = logUniformTransformInverse(thetas[i], lower, upper)
     
     return [thetas, distances]
 
@@ -166,45 +135,13 @@ observedSample = gkSample(simulationSize, params)
 uniLower = 0
 uniUpper = 10
 numComp = 3
-abcIterations = 1000000
-thetaInit = np.random.uniform(uniLower, uniUpper, 4)
+abcIterations = 10000000
 
-# gm = fitGaussianMixtureEM(observedSample, numComp)
-# plt.hist(observedSample, bins = 50, density = True)
+# covRw = np.array([[0.00549166661341732, 0.0112801170236118, -0.0255611780526848, -0.0163180936020067],
+#                    [0.0112801170236118, 0.0926757047779224, 0.0263799869794522, -0.165807183816090],
+#                    [-0.0255611780526848, 0.0263799869794522, 0.292641868551302, -0.0435074048753841],
+#                    [-0.0163180936020067, -0.165807183816090, -0.0435074048753841, 0.540229899133093]])
 
-# x = np.arange(-5, 20, 0.05)
-# y = np.exp(gm.score_samples(np.reshape(x, (len(x), 1))))
-# plt.plot(x, y, 'r')
-# plt.show()
-
-# weightMatrix = np.linalg.inv(gaussianMixtureInformation(observedSample, gm))
-# dist = np.zeros(100000)
-# for i in range(100000):
-#     print(i)
-#     x = gkSample(simulationSize, params)
-#     grad = gaussianMixtureScore(x, gm)
-#     dist[i] = grad @ weightMatrix @ grad.T
-
-# eps = np.quantile(dist, 0.01)
-covRw = np.array([[0.00549166661341732, 0.0112801170236118, -0.0255611780526848, -0.0163180936020067],
-                   [0.0112801170236118, 0.0926757047779224, 0.0263799869794522, -0.165807183816090],
-                   [-0.0255611780526848, 0.0263799869794522, 0.292641868551302, -0.0435074048753841],
-                   [-0.0163180936020067, -0.165807183816090, -0.0435074048753841, 0.540229899133093]])
-
-eps = 5.2817116154195
-(thetas, _) = gkABC(observedSample, simulationSize, numComp, abcIterations, np.array(params), eps, uniLower, uniUpper, covRw)
-# thetas = thetas[int(abcIterations / 2): , :] # Burn in
-print(np.mean(thetas, axis = 0))
-print(np.median(thetas, axis = 0))
-print(len(np.unique(thetas)))
-print(eps)
-plt.plot(list(range(abcIterations)), thetas[:, 0], label = "a", color = "r")
-plt.axhline(y = params[0], color = 'r', linestyle = 'dashed')
-plt.plot(list(range(abcIterations)), thetas[:, 1], label = "b", color = 'blue')
-plt.axhline(y = params[1], color = 'blue', linestyle = 'dashed')
-plt.plot(list(range(abcIterations)), thetas[:, 2], label = "g", color = "green")
-plt.axhline(y = params[2], color = 'green', linestyle = 'dashed')
-plt.plot(list(range(abcIterations)), thetas[:, 3], label = "k", color = "grey")
-plt.axhline(y = params[3], color = 'grey', linestyle = 'dashed')
-plt.legend(loc = "upper right")
-plt.show()
+(thetas, dists) = gkABC(observedSample, simulationSize, numComp, abcIterations, uniLower, uniUpper)
+abcData = np.column_stack((thetas, np.reshape(dists, (len(dists), 1))))
+np.save("./data/sim100-abc1e7-cov5I.npy", abcData)
