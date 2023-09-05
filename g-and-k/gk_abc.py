@@ -73,27 +73,9 @@ def gaussianMixtureInformation(data, gmModel):
         infoMat += np.outer(grad, grad) 
         
     return infoMat
-
-def logUniformTransform(theta, lower, upper):
-    logTrans = np.log((theta - lower) / (upper - theta))
-    return logTrans
     
-def logUniformTransformInverse(theta, lower, upper):
-    expTheta = np.exp(theta)
-    logTransInverse = (upper * expTheta + lower) / (1 + expTheta)
-    return logTransInverse   
-
-def logUniformTransformPdf(theta, lower, upper):
-    expTheta = np.exp(theta)
-    mass = np.prod(expTheta / (1 + expTheta)**2)
-    return mass
-    
-def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper = 10, covRw = [], printof = 10000):
-
-    numParams = 4
-    if len(covRw) == 0:
-        covRw = np.identity(numParams) * 5
-    
+def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper = 10):
+    numParams = 4    
     # Fitted auxiliary model to the observed data
     auxiliaryModel = fitGaussianMixtureEM(observedData, numComp)  
 
@@ -101,15 +83,10 @@ def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper
     # using the MLEs
     weightMatrix = np.linalg.inv(gaussianMixtureInformation(observedData, auxiliaryModel))
     thetas = np.zeros((abcIterations, numParams))
-    distances = np.zeros(abcIterations)
-    
+    distances = np.zeros(abcIterations)    
     for i in range(abcIterations):  
-        print(i)
-        # Generating (transformed) proposal parameters 
-        thetaTransProp = np.random.multivariate_normal(np.zeros(numParams), covRw, 1)[0]
-        
-        # Inverse transforming proposal to get the actual proposal parameters
-        thetaProp = logUniformTransformInverse(thetaTransProp, lower, upper)
+        # Generating proposal parameters from a U(lower, upper) prior
+        thetaProp = np.random.uniform(lower, upper, numParams)
         
         # Generating the summary statistic for a simulated sample with
         # the proposal parameters (score of auxiliarly model at the
@@ -135,13 +112,7 @@ observedSample = gkSample(simulationSize, params)
 uniLower = 0
 uniUpper = 10
 numComp = 3
-abcIterations = 10000000
-
-# covRw = np.array([[0.00549166661341732, 0.0112801170236118, -0.0255611780526848, -0.0163180936020067],
-#                    [0.0112801170236118, 0.0926757047779224, 0.0263799869794522, -0.165807183816090],
-#                    [-0.0255611780526848, 0.0263799869794522, 0.292641868551302, -0.0435074048753841],
-#                    [-0.0163180936020067, -0.165807183816090, -0.0435074048753841, 0.540229899133093]])
-
+abcIterations = 100000
 (thetas, dists) = gkABC(observedSample, simulationSize, numComp, abcIterations, uniLower, uniUpper)
 abcData = np.column_stack((thetas, np.reshape(dists, (len(dists), 1))))
-np.save("./data/sim100-abc1e7-cov5I.npy", abcData)
+np.save("./data/sim100-abc1e5.npy", abcData)
