@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-abcResults = np.load("./data/sim100-abc1e6-cov5I.npy")
+abcResults = np.load("./data/sim100-abc1e6-prioruni.npy")
 distances = abcResults[:, -1]
 nonNanDistances = np.nan_to_num(distances, nan = math.inf)
-threshold = np.nanquantile(nonNanDistances, 0.00001)
+threshold = np.nanquantile(nonNanDistances, 0.05)
 posteriorTheta = abcResults[abcResults[:, -1] < threshold][:, :-1]
 
 fig, axs = plt.subplots(2, 2)
@@ -22,4 +22,4 @@ for i in range(4):
     ax.title.set_text(paramNames[i])
     ax.legend(loc = 'upper right')
     
-plt.savefig("./results/sim100-abc1e6-cov5I-eps0.01.png")
+plt.savefig("./results/sim100-abc1e6-prioruni-eps0.05.png")

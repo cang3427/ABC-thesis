@@ -98,7 +98,7 @@ def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper
         # (note that we  do not need to consider the observed summary statistic
         # as in this case it is 0 since the score is 0 at the MLE with the observed
         # data )
-        propDist = statistic @ weightMatrix @ statistic.T     
+        propDist = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])     
 
         # Store current values      
         thetas[i] = thetaProp
@@ -112,7 +112,7 @@ observedSample = gkSample(simulationSize, params)
 uniLower = 0
 uniUpper = 10
 numComp = 3
-abcIterations = 100000
+abcIterations = 10000
 (thetas, dists) = gkABC(observedSample, simulationSize, numComp, abcIterations, uniLower, uniUpper)
 abcData = np.column_stack((thetas, np.reshape(dists, (len(dists), 1))))
-np.save("./data/sim100-abc1e5.npy", abcData)
+np.save("./data/sim100-abc1e4-prioruni.npy", abcData)
