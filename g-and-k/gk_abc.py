@@ -4,6 +4,8 @@ from sklearn.mixture import GaussianMixture
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
+warnings.filterwarnings("ignore")
 
 def gkSample(numSamples, params, c = 0.8):
     normalSamples = np.random.normal(size = numSamples)
@@ -85,6 +87,8 @@ def gkABC(observedData, simulationSize, numComp, abcIterations, lower = 0, upper
     thetas = np.zeros((abcIterations, numParams))
     distances = np.zeros(abcIterations)    
     for i in range(abcIterations):  
+        if not (i % 100000):
+            print(i)
         # Generating proposal parameters from a U(lower, upper) prior
         thetaProp = np.random.uniform(lower, upper, numParams)
         
@@ -112,7 +116,7 @@ observedSample = gkSample(simulationSize, params)
 uniLower = 0
 uniUpper = 10
 numComp = 3
-abcIterations = 10000
+abcIterations = 10000000
 (thetas, dists) = gkABC(observedSample, simulationSize, numComp, abcIterations, uniLower, uniUpper)
 abcData = np.column_stack((thetas, np.reshape(dists, (len(dists), 1))))
-np.save("./data/sim100-abc1e4-prioruni.npy", abcData)
+np.save("./data/sim100-abc1e7-prioruni(2).npy", abcData)
