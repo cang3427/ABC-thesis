@@ -3,7 +3,6 @@ from math import exp
 from sklearn.mixture import GaussianMixture
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
 warnings.filterwarnings("ignore")
 
