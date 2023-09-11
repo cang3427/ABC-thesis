@@ -2,12 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-abcResults = np.load("./data/sim100-abc1e6-prioruni.npy")
+abcResults = np.load("./data/sim100-abc1e7-prioruni(1).npy")
 distances = abcResults[:, -1]
 nonNanDistances = np.nan_to_num(distances, nan = math.inf)
 threshold = np.quantile(nonNanDistances, 0.001)
 posteriorTheta = abcResults[abcResults[:, -1] < threshold][:, :-1]
-print(len(posteriorTheta))
 
 fig, axs = plt.subplots(2, 2)
 trueParams = [3, 1, 2, 0.5]
@@ -23,5 +22,5 @@ for i in range(4):
     ax.title.set_text(paramNames[i])
     ax.legend(loc = 'upper right')
     
-# plt.savefig("./results/sim100-abc1e7-prioruni-eps0.05.png")
+# plt.savefig("./results/sim100-abc1e7-prioruni-eps0.001.png")
 plt.show()
