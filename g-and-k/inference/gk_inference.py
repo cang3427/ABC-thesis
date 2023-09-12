@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-abcResults = np.load("./data/sim100-abc1e7-prioruni(1).npy")
+abcResults = np.load("g-and-k/inference/data/sim100-abc1e7-prioruni.npy")
 distances = abcResults[:, -1]
 nonNanDistances = np.nan_to_num(distances, nan = math.inf)
 threshold = np.quantile(nonNanDistances, 0.001)
@@ -22,5 +22,5 @@ for i in range(4):
     ax.title.set_text(paramNames[i])
     ax.legend(loc = 'upper right')
     
-# plt.savefig("./results/sim100-abc1e7-prioruni-eps0.001.png")
+# plt.savefig("g-and-k/inference/results/sim100-abc1e7-prioruni-eps0.001.png")
 plt.show()
