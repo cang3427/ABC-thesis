@@ -25,7 +25,7 @@ def gaussian_mixture_score(data, gmModel):
     numParams = numComponents * 3 - 1
     scoreVec = np.zeros(numParams)    
     probs = np.exp(gmModel.score_samples(data))
-    
+        
     # Calculation of weight derivatives
     for i in range(numComponents - 1):
         weightDerivatives = (norm.pdf(y, mu[i], sig2[i]**0.5) - norm.pdf(y, mu[-1], sig2[-1]**0.5)).flatten() / probs

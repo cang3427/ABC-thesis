@@ -3,22 +3,20 @@ import matplotlib.pyplot as plt
 import math
 import seaborn as sns
 
-abcResults = np.load("g-and-k/model_choice/data/sim100-abc1e6.npy")
+abcResults = np.load("g-and-k/model_choice/data/test_a/sim100-abc1e7-3vs5.npy")
 distances = abcResults[:, -1]
 nonNanDistances = np.nan_to_num(distances, nan = math.inf)
 threshold = np.quantile(nonNanDistances, 0.01)
 
-nullResults = abcResults[abcResults[:, 0] == 0]
-alternativeResults = abcResults[abcResults[:, 0] == 1]
-
-nullProb = len(nullResults[nullResults[:, -1] < threshold]) / len(abcResults)
-alternativeProb = len(alternativeResults[alternativeResults[:, -1] < threshold]) / len(abcResults)
-print(nullProb)
-print(alternativeProb)
+nullDistances = abcResults[abcResults[:, 0] == 0][:, -1]
+alternativeDistances = abcResults[abcResults[:, 0] == 1][:, -1]
+bayesFactor = np.sum(nullDistances < threshold) / np.sum(alternativeDistances < threshold)
+print(bayesFactor)
 
 sns.set_style('whitegrid')
-sns.kdeplot(nullResults[:, -1], label = "Null")
-sns.kdeplot(alternativeResults[:, -1], label = "Alternative")
+sns.kdeplot(nullDistances, label = "Null")
+sns.kdeplot(alternativeDistances, label = "Alternative")
 plt.ticklabel_format(style = "plain", axis = "x")
+plt.ticklabel_format(style = "plain", axis = "y")
 plt.legend()
 plt.show()
