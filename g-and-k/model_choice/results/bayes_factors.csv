@@ -1,0 +1,9 @@
+Parameter	Null	Alternative	Bayes Factor
+a        	3   	5          	19.32
+a        	< 5 	> 5        	2.91
+b        	1   	3          	989.1
+b        	< 3 	> 3        	14284.71
+g        	2   	4          	1.01
+g        	< 5 	> 5        	0.98
+k        	0.5 	2          	15.28
+k        	< 2 	> 2        	181.82
