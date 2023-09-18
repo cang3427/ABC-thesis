@@ -10,9 +10,6 @@ threshold = np.quantile(nonNanDistances, 0.01)
 
 nullDistances = abcResults[abcResults[:, 0] == 0][:, -1]
 alternativeDistances = abcResults[abcResults[:, 0] == 1][:, -1]
-bayesFactor = np.sum(nullDistances < threshold) / np.sum(alternativeDistances < threshold)
-print(bayesFactor)
-
 sns.set_style('whitegrid')
 sns.kdeplot(nullDistances, label = "Null")
 sns.kdeplot(alternativeDistances, label = "Alternative")

@@ -38,11 +38,11 @@ def gk_abc(observedData, simulationSize, numComp, abcIterations, lower = 0, uppe
     results = np.column_stack((thetas, np.reshape(distances, (len(distances), 1))))
     return results
 
-observedSample = np.load("g-and-k/observed_data/100/sample0.npy")
+observedSample = np.load("../../project/RDS-FSC-ABCMC-RW/observed_data/100/sample0.npy")
 simulationSize = 100
 uniLower = 0
 uniUpper = 10
 numComp = 3
 abcIterations = 10000000
 abcData = gk_abc(observedSample, simulationSize, numComp, abcIterations, uniLower, uniUpper)
-np.save("g-and-k/inference/data/sim100-abc1e7-prioruni(1).npy", abcData)
+np.save("../../project/RDS-FSC-ABCMC-RW/g-and-k/inference/sim100-abc1e7-prioruni.npy", abcData)

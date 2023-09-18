@@ -5,6 +5,7 @@ from utils import *
 import warnings
 warnings.filterwarnings("ignore")
 from enum import Enum
+import time
 
 class ParameterType(Enum):
     EQUAL = 0
@@ -24,9 +25,10 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
     modelChoices = np.zeros(abcIterations)   
     thetas = np.zeros((abcIterations, numParams))
     distances = np.zeros(abcIterations) 
+    start = time.time()
     for i in range(abcIterations): 
         if not (i % 100000):
-            print(i)
+            print(i, time.time() - start)
             
         # Selecting the model to sample from
         model = random.randint(0, 1)
@@ -37,6 +39,7 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
         else:
             fixedParam = alternativeTestParam
             testType = alternativeType
+            
         # Selecting test parameter based on the type of test associated with the sampled model
         if (testType == ParameterType.EQUAL):
             testParam = fixedParam
@@ -69,14 +72,14 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
     results = np.column_stack((np.reshape(modelChoices, (len(modelChoices), 1)), thetas, np.reshape(distances, (len(distances), 1))))
     return results
 
-nullParam = 5
-alternativeParam = 5
+nullParam = 3
+alternativeParam = 3
 nullType = ParameterType.LESS
 alternativeType = ParameterType.GREATER
-paramToTestIdx = 0
-observedSample = np.load("g-and-k/observed_data/100/sample0.npy")
+paramToTestIdx = 1
+observedSample = np.load("../../project/RDS-FSC-ABCMC-RW/g-and-k/observed_data/100/sample0.npy")
 simulationSize = 100
 numComp = 3
 abcIterations = 10000000
 abcData = gk_abc_model_choice(observedSample, nullParam, alternativeParam, nullType, alternativeType, paramToTestIdx, simulationSize, numComp, abcIterations)
-np.save("g-and-k/model_choice/data/test_a/sim100-abc1e7-leq5vsgeq5.npy", abcData)
+np.save("../../project/RDS-FSC-ABCMC-RW/g-and-k/model_choice/test_b/sim100-abc1e7-leq3vsgeq3.npy", abcData)
