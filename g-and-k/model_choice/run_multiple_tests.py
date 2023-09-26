@@ -1,5 +1,5 @@
 from multiprocessing import Pool
-from gk_abc_model_choice import ParameterType, main
+from abc_model_choice_auxiliary import ParameterType, main
 import os
 import numpy as np
 

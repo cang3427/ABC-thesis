@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from gk_bayes_factors import calculate_bayes_factor
+from bayes_factor import calculate_bayes_factor
 import seaborn as sns
 import matplotlib.pyplot as plt
 
