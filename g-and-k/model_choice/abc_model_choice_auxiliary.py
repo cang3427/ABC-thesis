@@ -72,6 +72,7 @@ def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam
 
 def main(args):
     (nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, observedPath, savePath) = args
+    absSavePath = os.path.abspath(savePath)
     if (os.path.exists(absSavePath)):
         return
     observedData = np.load(observedPath)
