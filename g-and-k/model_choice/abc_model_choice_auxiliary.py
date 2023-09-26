@@ -6,14 +6,14 @@ import warnings
 warnings.filterwarnings("ignore")
 from enum import Enum
 import time
-
+    
 class ParameterType(Enum):
     EQUAL = 0
     LESS = 1
     GREATER = 2
     NOTEQUAL = 3
     
-def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, simulationSize, numComp, abcIterations, lower = 0, upper = 10):
+def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, simulationSize, numComp = 3, abcIterations = 10000000, lower = 0, upper = 10):
     # Fitting auxiliary model to the observed data
     auxiliaryModel = fit_gaussian_mixture_EM(observedData, numComp)  
 
@@ -26,13 +26,9 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
     thetas = np.zeros((abcIterations, numParams))
     distances = np.zeros(abcIterations) 
     start = time.time()
-    for i in range(abcIterations): 
-        if not (i % 100000):
-            print(i, time.time() - start)
-            
+    for i in range(abcIterations):             
         # Selecting the model to sample from
         model = random.randint(0, 1)
-
         if (model == 0):
             fixedParam = nullTestParam
             testType = nullType
@@ -59,11 +55,13 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
         # MLE for the observed sample)
         simulatedSample = gk_sample(simulationSize, thetaProp)
         statistic = gaussian_mixture_score(simulatedSample, auxiliaryModel)
+        
         # Distance function (Mahalanobis distance) for the summary statistic 
         # (note that we  do not need to consider the observed summary statistic
         # as in this case it is 0 since the score is 0 at the MLE with the observed
         # data )
         propDist = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])     
+        
         # Store current values   
         modelChoices[i] = model
         thetas[i] = thetaProp
@@ -72,14 +70,15 @@ def gk_abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullT
     results = np.column_stack((np.reshape(modelChoices, (len(modelChoices), 1)), thetas, np.reshape(distances, (len(distances), 1))))
     return results
 
-nullParam = 3
-alternativeParam = 3
-nullType = ParameterType.LESS
-alternativeType = ParameterType.GREATER
-paramToTestIdx = 1
-observedSample = np.load("../../project/RDS-FSC-ABCMC-RW/g-and-k/observed_data/100/sample0.npy")
-simulationSize = 100
-numComp = 3
-abcIterations = 10000000
-abcData = gk_abc_model_choice(observedSample, nullParam, alternativeParam, nullType, alternativeType, paramToTestIdx, simulationSize, numComp, abcIterations)
-np.save("../../project/RDS-FSC-ABCMC-RW/g-and-k/model_choice/test_b/sim100-abc1e7-leq3vsgeq3.npy", abcData)
+def main(args):
+    (nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, observedPath, savePath) = args
+    absSavePath = os.path.abspath(savePath)
+    if (os.path.exists(absSavePath)):
+        return
+    observedData = np.load(observedPath)
+    results = abc_model_choice_auxiliary(observedData, nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize)
+    np.save(savePath, results)
+    
+if __name__ == "__main__":
+    args = parse_arguments()
+    main(args)
