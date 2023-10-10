@@ -8,7 +8,7 @@ def calculate_bayes_factor(results, epsilon = 0.01):
     threshold = np.quantile(nonNanDistances, epsilon)
     nullDistances = results[results[:, 0] == 0][:, -1]
     alternativeDistances = results[results[:, 0] == 1][:, -1]
-    bayesFactor = np.round(np.sum(nullDistances < threshold) / np.sum(alternativeDistances < threshold), 2)
+    bayesFactor = np.sum(nullDistances < threshold) / np.sum(alternativeDistances < threshold)
     return bayesFactor
 
 # dataPath = "g-and-k/model_choice/data"

@@ -13,7 +13,7 @@ class ParameterType(Enum):
     GREATER = 2
     NOTEQUAL = 3
     
-def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, simulationSize, numComp = 3, abcIterations = 10000000, lower = 0, upper = 10):
+def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, simulationSize, distType, numComp = 3, abcIterations = 10_000_000, lower = 0, upper = 10):
     # Fitting auxiliary model to the observed data
     auxiliaryModel = fit_gaussian_mixture_EM(observedData, numComp)  
 
@@ -21,7 +21,11 @@ def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam
     # using the MLEs
     weightMatrix = np.linalg.inv(gaussian_mixture_information(observedData, auxiliaryModel))
     
-    numParams = 4
+    if (distType == DistributionType.GANDK):
+        numParams = 4
+    elif (distType == DistributionType.NORMAL):
+        numParams = 2
+        
     modelChoices = np.zeros(abcIterations)   
     thetas = np.zeros((abcIterations, numParams))
     distances = np.zeros(abcIterations) 
@@ -53,7 +57,10 @@ def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam
         # Generating the summary statistic for a simulated sample with
         # the proposal parameters (score of auxiliarly model at the
         # MLE for the observed sample)
-        simulatedSample = gk_sample(simulationSize, thetaProp)
+        if (distType == DistributionType.GANDK):
+            simulatedSample = gk_sample(simulationSize, thetaProp)
+        elif (distType == DistributionType.NORMAL):
+            simulatedSample = normal_sample(simulationSize, thetaProp)
         statistic = gaussian_mixture_score(simulatedSample, auxiliaryModel)
         
         # Distance function (Mahalanobis distance) for the summary statistic 
@@ -71,12 +78,11 @@ def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam
     return results
 
 def main(args):
-    (nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, observedPath, savePath) = args
-    absSavePath = os.path.abspath(savePath)
-    if (os.path.exists(absSavePath)):
+    (nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, distType, observedPath, savePath) = args
+    if os.path.exists(savePath):
         return
     observedData = np.load(observedPath)
-    results = abc_model_choice_auxiliary(observedData, nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize)
+    results = abc_model_choice_auxiliary(observedData, nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, distType)
     np.save(savePath, results)
     
 if __name__ == "__main__":

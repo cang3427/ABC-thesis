@@ -2,7 +2,16 @@ import numpy as np
 from scipy.stats import norm
 from math import exp
 from sklearn.mixture import GaussianMixture
+from enum import Enum
 
+class DistributionType(Enum):
+    NORMAL = 0
+    GANDK = 1
+
+def normal_sample(numSamples, params):
+    normalSamples = np.random.normal(params[0], params[1], numSamples)
+    return np.reshape(normalSamples, (numSamples, 1))
+    
 def gk_sample(numSamples, params, c = 0.8):
     normalSamples = np.random.normal(size = numSamples)
     return [[gk_quantile(normalSample, params, c)] for normalSample in normalSamples]
