@@ -1,15 +1,22 @@
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, rankdata
+from scipy.spatial.distance import pdist, cdist
 from math import exp
 from sklearn.mixture import GaussianMixture
 from enum import Enum
 
+class DistanceMetric(Enum):
+    AUXILIARY = 0
+    CVM = 1
+    WASS = 2
+    MMD = 3
+    
 class DistributionType(Enum):
     NORMAL = 0
     GANDK = 1
 
-def normal_sample(numSamples, params):
-    normalSamples = np.random.normal(params[0], params[1], numSamples)
+def normal_sample(mean, sd, numSamples):
+    normalSamples = np.random.normal(mean, sd, numSamples)
     return np.reshape(normalSamples, (numSamples, 1))
     
 def gk_sample(numSamples, params, c = 0.8):
@@ -80,3 +87,38 @@ def gaussian_mixture_information(data, gmModel):
         infoMat += np.outer(grad, grad) 
         
     return infoMat
+
+def cramer_von_mises_distance(observedSample, simulatedSample):
+    sampleSize = len(observedSample)
+    combinedSample = np.concatenate((observedSample, simulatedSample))
+    combinedRanks = rankdata(combinedSample)
+    observedRanks = np.sort(combinedRanks[:sampleSize])
+    simulatedRanks = np.sort(combinedRanks[sampleSize:])
+    indices = np.array(range(1, sampleSize + 1))
+    rankSum = sum((observedRanks - indices)**2) + sum((simulatedRanks - indices)**2)
+    distance = rankSum / (2 * sampleSize**2) - (4 * sampleSize**2 - 1) / (12 * sampleSize)
+    
+    return distance
+
+def wasserstein_distance(observedSample, simulatedSample, observedIsSorted = True):
+    if observedIsSorted:
+        sortedObserved = observedSample
+    else:
+        sortedObserved = np.sort(observedSample)
+        
+    sortedSimulated = np.sort(simulatedSample)
+    distance = np.mean(np.absolute(sortedObserved - sortedSimulated))
+    return distance
+
+def gaussian_kernel(sqDistances, sigma):
+    return np.exp(-sqDistances / (2 * sigma))
+
+def maximum_mean_discrepancy(observedSample, simulatedSample, sigma = None, observedSqDistances = None):
+    if sigma is None:
+        sigma = np.median(observedSqDistances) ** 0.5    
+    if observedSqDistances is None:
+        observedSqDistances = pdist(observedSample, 'sqeuclidean')
+    simulatedSqDistances = pdist(simulatedSample, 'sqeuclidean')
+    mixedSqDistances = cdist(observedSample, simulatedSample, 'sqeuclidean')
+    distance = np.mean(gaussian_kernel(observedSqDistances, sigma)) +  np.mean(gaussian_kernel(simulatedSqDistances, sigma)) - 2 *  np.mean(gaussian_kernel(mixedSqDistances, sigma))
+    return distance

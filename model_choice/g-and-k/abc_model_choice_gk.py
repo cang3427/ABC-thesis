@@ -5,31 +5,22 @@ from utils import *
 import warnings
 warnings.filterwarnings("ignore")
 from enum import Enum
-import time
-    
+
 class ParameterType(Enum):
     EQUAL = 0
     LESS = 1
     GREATER = 2
     NOTEQUAL = 3
     
-def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, simulationSize, distType, numComp = 3, abcIterations = 10_000_000, lower = 0, upper = 10):
-    # Fitting auxiliary model to the observed data
-    auxiliaryModel = fit_gaussian_mixture_EM(observedData, numComp)  
-
-    # Calculating weight matrix which is the inverse of the observed information
-    # using the MLEs
-    weightMatrix = np.linalg.inv(gaussian_mixture_information(observedData, auxiliaryModel))
-    
-    if (distType == DistributionType.GANDK):
-        numParams = 4
-    elif (distType == DistributionType.NORMAL):
-        numParams = 2
+def abc_model_choice_gk(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramToTestIdx, distanceMetric, lower = 0, upper = 10, numComp = 3, abcIterations = 10_000_000):
+    if (distanceMetric == DistanceMetric.AUXILIARY):
+        auxiliaryModel = fit_gaussian_mixture_EM(observedData, numComp)  
+        weightMatrix = np.linalg.inv(gaussian_mixture_information(observedData, auxiliaryModel))
         
     modelChoices = np.zeros(abcIterations)   
-    thetas = np.zeros((abcIterations, numParams))
+    thetas = np.zeros((abcIterations, 4))
     distances = np.zeros(abcIterations) 
-    start = time.time()
+    simulationSize = len(observedData)
     for i in range(abcIterations):             
         # Selecting the model to sample from
         model = random.randint(0, 1)
@@ -51,28 +42,27 @@ def abc_model_choice_auxiliary(observedData, nullTestParam, alternativeTestParam
             testParam = np.random.uniform(lower, upper, 1)
             
         # Generating other proposal parameters from a U(lower, upper) prior
-        otherParams = np.random.uniform(lower, upper, numParams - 1)
+        otherParams = np.random.uniform(lower, upper, 3)
         thetaProp = np.insert(otherParams, paramToTestIdx, testParam)
         
         # Generating the summary statistic for a simulated sample with
         # the proposal parameters (score of auxiliarly model at the
         # MLE for the observed sample)
-        if (distType == DistributionType.GANDK):
-            simulatedSample = gk_sample(simulationSize, thetaProp)
-        elif (distType == DistributionType.NORMAL):
-            simulatedSample = normal_sample(simulationSize, thetaProp)
-        statistic = gaussian_mixture_score(simulatedSample, auxiliaryModel)
-        
-        # Distance function (Mahalanobis distance) for the summary statistic 
-        # (note that we  do not need to consider the observed summary statistic
-        # as in this case it is 0 since the score is 0 at the MLE with the observed
-        # data )
-        propDist = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])     
+        simulatedSample = gk_sample(simulationSize, thetaProp)
+        if distanceMetric == DistanceMetric.AUXILIARY:            
+            statistic = gaussian_mixture_score(simulatedSample, auxiliaryModel)
+            distance = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])  
+        elif distanceMetric == DistanceMetric.CVM:
+            distance = cramer_von_mises_distance(observedData, simulatedSample)
+        elif distanceMetric == DistanceMetric.WASS:
+            distance = wasserstein_distance(observedData, simulatedSample)
+        elif distanceMetric == DistanceMetric.MMD:
+            distance = maximum_mean_discrepancy(observedData, simulatedSample)
         
         # Store current values   
         modelChoices[i] = model
         thetas[i] = thetaProp
-        distances[i] = propDist 
+        distances[i] = distance
 
     results = np.column_stack((np.reshape(modelChoices, (len(modelChoices), 1)), thetas, np.reshape(distances, (len(distances), 1))))
     return results
@@ -82,9 +72,19 @@ def main(args):
     if os.path.exists(savePath):
         return
     observedData = np.load(observedPath)
-    results = abc_model_choice_auxiliary(observedData, nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, distType)
+    results = abc_model_choice_gk(observedData, nullParam, alternativeParam, nullType, alternativeType, testIndex, observedSize, distType)
     np.save(savePath, results)
     
 if __name__ == "__main__":
     args = parse_arguments()
     main(args)
+
+observedData = np.load("g-and-k/model_choice/data/sample0size100.npy")
+nullTestParam = 0
+alternativeTestParam = 0
+nullType = ParameterType.EQUAL
+alternativeType = ParameterType.NOTEQUAL
+paramIdx = 0
+simSize = 100
+distType = DistributionType.NORMAL
+abc_model_choice(observedData, nullTestParam, alternativeTestParam, nullType, alternativeType, paramIdx, simSize, distType)
