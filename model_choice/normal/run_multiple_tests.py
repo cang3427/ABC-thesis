@@ -3,7 +3,7 @@ from abc_model_choice_normal import DistanceMetric, main
 import os
 import numpy as np
 
-NUM_WORKERS = 32
+NUM_WORKERS = 5
 NUM_OBSERVED = 1
 OBSERVED_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/observed_data"
 SAVE_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/model_choice/runs/eq3_vs_neq3"
@@ -61,6 +61,5 @@ if __name__ == "__main__":
         with Pool(NUM_WORKERS) as pool:
             for _ in range(NUM_WORKERS):
                 pool.apply_async(worker_process, (taskQueue, taskLock))
-                
             pool.close()
             pool.join()

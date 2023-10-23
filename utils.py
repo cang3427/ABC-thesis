@@ -10,16 +10,12 @@ class DistanceMetric(Enum):
     CVM = 1
     WASS = 2
     MMD = 3
-    
-class DistributionType(Enum):
-    NORMAL = 0
-    GANDK = 1
 
 def normal_sample(mean, sd, numSamples):
     normalSamples = np.random.normal(mean, sd, numSamples)
     return np.reshape(normalSamples, (numSamples, 1))
     
-def gk_sample(numSamples, params, c = 0.8):
+def gk_sample(params, numSamples, c = 0.8):
     normalSamples = np.random.normal(size = numSamples)
     return [[gk_quantile(normalSample, params, c)] for normalSample in normalSamples]
 

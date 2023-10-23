@@ -1,20 +1,14 @@
 import random
-import sys, os
+import os, sys
 sys.path.insert(1, os.path.join(sys.path[0], '../..')) 
 from utils import *
 import warnings
 warnings.filterwarnings("ignore")
 from enum import Enum
 from math import sqrt
-
-class ParameterType(Enum):
-    EQUAL = 0
-    LESS = 1
-    GREATER = 2
-    NOTEQUAL = 3
     
 def abc_model_choice_normal(observedData, nullMean, variance, priorVarianceScale, distanceMetric, numComp = 3, abcIterations = 10_000_000):
-    if (distanceMetric == DistanceMetric.AUXILIARY):
+    if distanceMetric == DistanceMetric.AUXILIARY:
         auxiliaryModel = fit_gaussian_mixture_EM(observedData, numComp)  
         weightMatrix = np.linalg.inv(gaussian_mixture_information(observedData, auxiliaryModel))
         
@@ -23,14 +17,13 @@ def abc_model_choice_normal(observedData, nullMean, variance, priorVarianceScale
 
     if distanceMetric == DistanceMetric.MMD:
         observedSqDistances = pdist(observedData, 'sqeuclidean')
-        sigma = np.median(observedSqDistances) ** 0.5
+        sigma = np.sqrt(np.median(observedSqDistances))
         
-    modelChoices = np.zeros(abcIterations)   
-    thetas = np.zeros((abcIterations, 2))
+    modelChoices = np.zeros(abcIterations)  
     distances = np.zeros(abcIterations) 
     simulationSize = len(observedData)
-    sd = sqrt(variance)
-    priorSd = sqrt(variance * priorVarianceScale)        
+    sd = np.sqrt(variance)
+    priorSd = np.sqrt(variance * priorVarianceScale)        
     for i in range(abcIterations): 
         print(i)    
         # Selecting the model to sample from and defining the mean
@@ -56,10 +49,9 @@ def abc_model_choice_normal(observedData, nullMean, variance, priorVarianceScale
         
         # Store current values   
         modelChoices[i] = model
-        thetas[i] = np.array([modelMean, variance])
         distances[i] = distance
 
-    results = np.column_stack((np.reshape(modelChoices, (len(modelChoices), 1)), thetas, np.reshape(distances, (len(distances), 1))))
+    results = np.column_stack(modelChoices, distance)
     return results
 
 def main(args):
