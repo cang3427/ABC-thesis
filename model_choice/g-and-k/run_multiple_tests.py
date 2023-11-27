@@ -65,7 +65,7 @@ if __name__ == "__main__":
     paramGs = [2, 2, None, None]
     paramKs = [0.5, 0.5, 0.5, None]
     testParams = [ParameterName.AA] * 4
-    distanceMetrics = [DistanceMetric.AUXILIARY, DistanceMetric.CVM, DistanceMetric.WASS]
+    distanceMetrics = [DistanceMetric.MMD]
     sampleSizes = np.linspace(10, 1000, 100).astype(int)
     runArgs = generate_args(paramAs, paramBs, paramGs, paramKs, testParams, distanceMetrics, sampleSizes)
     with Manager() as manager:

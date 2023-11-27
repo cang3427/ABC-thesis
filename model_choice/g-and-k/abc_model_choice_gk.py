@@ -74,8 +74,7 @@ def abc_model_choice_gk(observedData, paramA, paramB, paramG, paramK, paramToTes
             
         simulatedSample = gk_sample(theta, simulationSize)
         if distanceMetric == DistanceMetric.AUXILIARY:            
-            statistic = gaussian_mixture_score(simulatedSample, auxiliaryModel)
-            distance = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])  
+            distance = auxiliary_distance(simulatedSample, auxiliaryModel, weightMatrix)  
         elif distanceMetric == DistanceMetric.CVM:
             distance = cramer_von_mises_distance(observedData, simulatedSample)
         elif distanceMetric == DistanceMetric.WASS:
@@ -88,7 +87,7 @@ def abc_model_choice_gk(observedData, paramA, paramB, paramG, paramK, paramToTes
         thetas[i] = theta
         distances[i] = distance
 
-    results = np.column_stack((np.reshape(modelChoices, (len(modelChoices), 1)), thetas, np.reshape(distances, (len(distances), 1))))
+    results = np.column_stack((modelChoices, thetas, distances))
     return results
 
 def main(args):

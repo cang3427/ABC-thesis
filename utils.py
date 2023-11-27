@@ -84,6 +84,11 @@ def gaussian_mixture_information(data, gmModel):
         
     return infoMat
 
+def auxiliary_distance(sample, auxiliaryModel, weightMatrix):
+    statistic = gaussian_mixture_score(sample, auxiliaryModel)
+    distance = np.linalg.multi_dot([statistic, weightMatrix, statistic.T])  
+    return distance
+
 def cramer_von_mises_distance(observedSample, simulatedSample):
     sampleSize = len(observedSample)
     combinedSample = np.concatenate((observedSample, simulatedSample))
@@ -92,8 +97,7 @@ def cramer_von_mises_distance(observedSample, simulatedSample):
     simulatedRanks = np.sort(combinedRanks[sampleSize:])
     indices = np.array(range(1, sampleSize + 1))
     rankSum = sum((observedRanks - indices)**2) + sum((simulatedRanks - indices)**2)
-    distance = rankSum / (2 * sampleSize**2) - (4 * sampleSize**2 - 1) / (12 * sampleSize)
-    
+    distance = rankSum / (2 * sampleSize**2) - (4 * sampleSize**2 - 1) / (12 * sampleSize)    
     return distance
 
 def wasserstein_distance(observedSample, simulatedSample, observedIsSorted = True):

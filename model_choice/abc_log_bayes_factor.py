@@ -9,4 +9,7 @@ def abc_log_bayes_factor(results, epsilon = 0.01):
     nullDistances = results[results[:, 0] == 0][:, -1]
     alternativeDistances = results[results[:, 0] == 1][:, -1]
     bayesFactor = np.sum(nullDistances < threshold) / np.sum(alternativeDistances < threshold)
+    if bayesFactor == 0:
+        print("NAN")
+        return -float("Inf")
     return math.log(bayesFactor)

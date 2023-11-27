@@ -3,10 +3,10 @@ from abc_model_choice_normal import DistanceMetric, main
 import os
 import numpy as np
 
-NUM_WORKERS = 5
+NUM_WORKERS = 32
 NUM_OBSERVED = 1
 OBSERVED_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/observed_data"
-SAVE_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/model_choice/runs/eq3_vs_neq3"
+SAVE_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/model_choice/runs/mean_test/eq3_vs_neq3/unknown_var"
 
 def generate_args(nullMean, variance, priorVarianceScale, distanceMetrics, observedSizes):
     nullMeanArgs = []
@@ -18,20 +18,21 @@ def generate_args(nullMean, variance, priorVarianceScale, distanceMetrics, obser
     for i in range(NUM_OBSERVED):
         for distanceMetric in distanceMetrics:
             distanceMetricArgs += [distanceMetric] * len(observedSizes)
+            if distanceMetric == DistanceMetric.AUXILIARY:
+                distanceDir = os.path.join(SAVE_DIR, "aux")
+            elif distanceMetric == DistanceMetric.CVM:
+                distanceDir = os.path.join(SAVE_DIR, "cvm")
+            elif distanceMetric == DistanceMetric.WASS:
+                distanceDir = os.path.join(SAVE_DIR, "wass")
+            elif distanceMetric == DistanceMetric.MMD:
+                distanceDir = os.path.join(SAVE_DIR, "mmd")  
             for size in observedSizes:
                 observedPathArgs.append(os.path.join(OBSERVED_DIR, "sample" + str(i) + "size" + str(size) + ".npy"))
                 nullMeanArgs.append(nullMean)
                 varianceArgs.append(variance)
                 priorVarianceScaleArgs.append(priorVarianceScale)   
-                runFilename = "run" + str(i) + "size" + str(size) + ".npy"
-                if distanceMetric == DistanceMetric.AUXILIARY:
-                    savePath = os.path.join(SAVE_DIR, "aux", runFilename)
-                elif distanceMetric == DistanceMetric.CVM:
-                    savePath = os.path.join(SAVE_DIR, "cvm", runFilename)
-                elif distanceMetric == DistanceMetric.WASS:
-                    savePath = os.path.join(SAVE_DIR, "wass", runFilename)
-                elif distanceMetric == DistanceMetric.MMD:
-                    savePath = os.path.join(SAVE_DIR, "mmd", runFilename)           
+                runFilename = "run" + str(i) + "size" + str(size) + ".npy"         
+                savePath = os.path.join(distanceDir, runFilename)
                 savePathArgs.append(savePath)
     
     return zip(nullMeanArgs, varianceArgs, priorVarianceScaleArgs, distanceMetricArgs, observedPathArgs, savePathArgs)
@@ -47,9 +48,9 @@ def worker_process(queue, lock):
     
 if __name__ == "__main__":       
     nullMean = 3
-    variance = 1
+    variance = None
     priorVarianceScale = 100
-    distanceMetrics = [DistanceMetric.MMD]
+    distanceMetrics = [e for e in DistanceMetric]
     observedSizes = np.linspace(10, 1000, 100).astype(int)
     runArgs = generate_args(nullMean, variance, priorVarianceScale, distanceMetrics, observedSizes)
     with Manager() as manager:
