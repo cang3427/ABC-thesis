@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import norm, rankdata
+from scipy.stats import wasserstein_distance as wass_distance
 from scipy.spatial.distance import pdist, cdist
 from math import exp
 from sklearn.mixture import GaussianMixture
@@ -10,19 +11,10 @@ class DistanceMetric(Enum):
     CVM = 1
     WASS = 2
     MMD = 3
-
-def normal_sample(mean, sd, numSamples):
-    normalSamples = np.random.normal(mean, sd, numSamples)
-    return np.reshape(normalSamples, (numSamples, 1))
+    QUANTILE = 4
+    STATS = 5
     
-def gk_sample(params, numSamples, c = 0.8):
-    normalSamples = np.random.normal(size = numSamples)
-    return [[gk_quantile(normalSample, params, c)] for normalSample in normalSamples]
-
-def gk_quantile(normalSample, params, c = 0.8):    
-    (a, b, g, k) = list(params)
-    val = a + b * (1 + c * (1 - exp(-g * normalSample)) / (1 + exp(-g * normalSample))) * (1 + normalSample**2)**k * normalSample
-    return val
+METRIC_LABELS = {"aux": "Aux", "cvm": "CvM", "mmd": "MMD", "wass": "Wass", "stat": "Stat", "qle": "Stat"}
 
 def fit_gaussian_mixture_EM(observedData, numComponents, tol = 1e-7, maxIterations = 10000, nInit = 10):
     gm = GaussianMixture(numComponents, tol = tol, max_iter = maxIterations, n_init = nInit)
@@ -90,25 +82,36 @@ def auxiliary_distance(sample, auxiliaryModel, weightMatrix):
     return distance
 
 def cramer_von_mises_distance(observedSample, simulatedSample):
-    sampleSize = len(observedSample)
+    observedSize = len(observedSample)
+    simulatedSize = len(simulatedSample)    
     combinedSample = np.concatenate((observedSample, simulatedSample))
     combinedRanks = rankdata(combinedSample)
-    observedRanks = np.sort(combinedRanks[:sampleSize])
-    simulatedRanks = np.sort(combinedRanks[sampleSize:])
-    indices = np.array(range(1, sampleSize + 1))
-    rankSum = sum((observedRanks - indices)**2) + sum((simulatedRanks - indices)**2)
-    distance = rankSum / (2 * sampleSize**2) - (4 * sampleSize**2 - 1) / (12 * sampleSize)    
+    observedRanks = np.sort(combinedRanks[:observedSize])
+    simulatedRanks = np.sort(combinedRanks[observedSize:])
+    
+    observedIndices = np.array(range(1, observedSize + 1))
+    simulatedIndices = np.array(range(1, simulatedSize + 1))
+    rankSum = observedSize * sum((observedRanks - observedIndices)**2) + simulatedSize * sum((simulatedRanks - simulatedIndices)**2)
+    
+    sizeProd = observedSize * simulatedSize
+    sizeSum = observedSize + simulatedSize
+    distance = rankSum / (sizeProd * sizeSum) - (4 * sizeProd - 1) / (6 * sizeSum)    
     return distance
 
 def wasserstein_distance(observedSample, simulatedSample, observedIsSorted = True):
-    if observedIsSorted:
-        sortedObserved = observedSample
-    else:
-        sortedObserved = np.sort(observedSample)
-        
-    sortedSimulated = np.sort(simulatedSample)
-    distance = np.mean(np.absolute(sortedObserved - sortedSimulated))
-    return distance
+    observedSize = len(observedSample)
+    simulatedSize = len(simulatedSample)
+    if observedSize == simulatedSize:
+        if observedIsSorted:
+            sortedObserved = observedSample
+        else:
+            sortedObserved = np.sort(observedSample, axis = 0)
+            
+        sortedSimulated = np.sort(simulatedSample, axis = 0)
+        distance = np.mean(np.abs(sortedObserved - sortedSimulated))
+        return distance
+
+    return wass_distance(observedSample.flatten(), simulatedSample.flatten())
 
 def gaussian_kernel(sqDistances, sigma):
     return np.exp(-sqDistances / (2 * sigma))
