@@ -1,31 +1,22 @@
 import numpy as np
 import os, sys
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from utils import DistanceMetric
-from run_jobs import run_jobs
-from abc_toad import *
+from common.distances import Distance
+from toad.run_jobs import run_jobs
+from multiprocessing import cpu_count
 
-OBSERVED_PATH = "../../project/RDS-FSC-ABCMC-RW/toad/model_choice/true_data/observed_data.npy"
-SAVE_PATH = "../../project/RDS-FSC-ABCMC-RW/toad/model_choice/runs/true"
-# DISTANCE_METRICS = [DistanceMetric.WASS, DistanceMetric.STATS]
-# NUM_WORKERS = 2
+OBSERVED_PATH = "./toad/data/observed_data.npy"
+SAVE_PATH = "./toad/runs/true"
+DISTANCES = [Distance.CVM, Distance.WASS_LOG, Distance.STAT]
+NUM_WORKERS = min(len(DISTANCES), cpu_count() - 1)
 
 if __name__ == "__main__":
-    results = abc_toad(np.load(OBSERVED_PATH), DistanceMetric.STATS)
-    np.save(os.path.join(SAVE_PATH, "run_stat.npy"), results)
-    # saveArgs = []
-    # for metric in DISTANCE_METRICS:
-    #     if metric == DistanceMetric.CVM:
-    #         suff = "cvm"
-    #     elif metric == DistanceMetric.WASS:
-    #         suff = "wass"
-    #     elif metric == DistanceMetric.MMD:
-    #         suff = "mmd"   
-    #     elif metric == DistanceMetric.STATS: 
-    #         suff = "stat"
-    #     else:
-    #         continue        
-    #     saveArgs.append(os.path.join(SAVE_PATH, "run_" + suff + ".npy"))
+    if not os.path.exists(OBSERVED_PATH):
+        sys.exit("Error: Observed data does not exist. Prepare observed data before running this script.")  
+    
+    if not os.path.exists(SAVE_PATH):
+        os.makedirs(SAVE_PATH)
         
-    # runArgs = zip(DISTANCE_METRICS, [OBSERVED_PATH] * len(DISTANCE_METRICS), saveArgs) 
-    # run_jobs(runArgs, NUM_WORKERS)
+    save_args = [os.path.join(SAVE_PATH, f"run_{d.name.lower()}.npy") for d in DISTANCES]
+    observed_args = [OBSERVED_PATH] * len(DISTANCES)
+    run_args = zip(DISTANCES, observed_args, save_args)
+    run_jobs(run_args, NUM_WORKERS)

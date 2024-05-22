@@ -1,71 +1,71 @@
-from multiprocessing import Pool, Manager
-from abc_model_choice_normal import DistanceMetric, main
-import os
+import os, sys
 import numpy as np
+from multiprocessing import Pool, Manager, Queue, Lock, cpu_count
+from normal.abc_normal import main
+from typing import List, Any, Iterator, Tuple
+from common.distances import Distance
 
-NUM_WORKERS = 32
+OBSERVED_DIR = "./normal/observed_data"
+SAVE_DIR = "./normal/runs"
+NUM_WORKERS = cpu_count() - 1
 NUM_OBSERVED = 100
-OBSERVED_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/observed_data/m2/params_sampled/unknown_var"
-SAVE_DIR = "../../project/RDS-FSC-ABCMC-RW/normal/model_choice/runs/m2"
+MODEL = 0
+NULL_MEAN = 3
+VAR = 1
+PRIOR_VAR_SCALE = 100
+DISTANCES = [Distance.CVM, Distance.MMD, Distance.WASS, Distance.STAT]
+SIZES = [100, 1000]
 
-def generate_args(nullMeans, variances, priorVarianceScales, distanceMetrics, observedSizes):
-    nullMeanArgs = []
-    varianceArgs = []
-    priorVarianceScaleArgs = []
-    distanceMetricArgs = []
-    observedPathArgs = []
-    savePathArgs = []
-    for size in observedSizes:
+def generate_args(distances: List[Distance], observed_sizes = List[int]) -> Iterator[Tuple[Distance, str, str]]:
+    observed_path_args = []
+    save_path_args = []
+    model_dir = f"m{MODEL}"
+    run_dir = os.path.join(SAVE_DIR, "unknown_var" if VAR is None else "known_var", model_dir)
+    if not os.path.isdir(run_dir):
+        os.makedirs(run_dir)
+        
+    for size in observed_sizes:
+        size_dir = f"size_{size}"
+        observed_size_dir = os.path.join(OBSERVED_DIR, model_dir, size_dir)
+        run_size_dir = os.path.join(run_dir, size_dir)
+        if not os.path.isdir(run_size_dir):
+            os.mkdir(run_size_dir)
+            
         for i in range(NUM_OBSERVED):
-            for nullMean, variance, priorVarianceScale in zip(nullMeans, variances, priorVarianceScales):
-                if variance is None:
-                    test_dir = os.path.join(SAVE_DIR, "unknown_var/params_sampled")
-                else:
-                    test_dir = os.path.join(SAVE_DIR, "known_var/params_sampled")
-                for distanceMetric in distanceMetrics:                    
-                    if distanceMetric == DistanceMetric.STATS:
-                        distanceDir = os.path.join(test_dir, "stat")
-                    elif distanceMetric == DistanceMetric.CVM:
-                        distanceDir = os.path.join(test_dir, "cvm")
-                    elif distanceMetric == DistanceMetric.WASS:
-                        distanceDir = os.path.join(test_dir, "wass")
-                    elif distanceMetric == DistanceMetric.MMD:
-                        distanceDir = os.path.join(test_dir, "mmd")  
-                    else:
-                        continue
-                    if not os.path.isdir(distanceDir):
-                        os.mkdir(distanceDir)  
-                    observedPathArgs.append(os.path.join(OBSERVED_DIR, "sample" + str(i) + "size" + str(size) + ".npy"))
-                    nullMeanArgs.append(nullMean)
-                    varianceArgs.append(variance)
-                    priorVarianceScaleArgs.append(priorVarianceScale)   
-                    runFilename = "run" + str(i) + "size" + str(size) + ".npy"         
-                    savePath = os.path.join(distanceDir, runFilename)
-                    savePathArgs.append(savePath)
-                    distanceMetricArgs.append(distanceMetric)
+            for distance in distances:                    
+                distance_dir = os.path.join(run_size_dir, distance.name.lower())
+                if not os.path.isdir(distance_dir):
+                    os.mkdir(distance_dir)  
+                    
+                observed_path_args.append(os.path.join(observed_size_dir, f"sample{i}.npy"))
+                run_filename = f"run{i}.npy"        
+                save_path = os.path.join(distance_dir, run_filename)
+                save_path_args.append(save_path)
     
-    return zip(nullMeanArgs, varianceArgs, priorVarianceScaleArgs, distanceMetricArgs, observedPathArgs, savePathArgs)
+    distance_args = distances * (len(observed_sizes) * NUM_OBSERVED)
+    return zip(distance_args, observed_path_args, save_path_args)
 
-def worker_process(queue, lock):
+def worker_process(queue: Queue, lock: Lock):
     while True:
         with lock:
             if queue.empty():
                 return
             args = queue.get()
         
-        main(args)
+        main(NULL_MEAN, VAR, PRIOR_VAR_SCALE, *args)
     
 if __name__ == "__main__":       
-    nullMeans = [3]
-    variances = [None]
-    priorVarianceScales = [100]
-    distanceMetrics = [metric for metric in DistanceMetric]
-    observedSizes = [100, 1000]
-    runArgs = generate_args(nullMeans, variances, priorVarianceScales, distanceMetrics, observedSizes)
+    if not os.path.isdir(OBSERVED_DIR):
+        sys.exit("Error: Observed data does not exist. Generate observed data before running this script.")
+    
+    if not os.path.isdir(SAVE_DIR):
+        os.makedirs(SAVE_DIR)
+        
+    run_args = generate_args(DISTANCES, SIZES)
     with Manager() as manager:
         taskQueue = manager.Queue()
         taskLock = manager.Lock()
-        for runArg in runArgs:
+        for runArg in run_args:
             taskQueue.put(runArg)
             
         with Pool(NUM_WORKERS) as pool:
