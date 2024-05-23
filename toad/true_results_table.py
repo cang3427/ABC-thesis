@@ -5,8 +5,8 @@ from toad.calculate_abc_posteriors import weighted_distances
 from common.abc_posterior import abc_posterior
 from common.distances import Distance, DISTANCE_LABELS
 
-PLOTS_DIR = "toad/plots/true"
-RUN_DIR = "toad/runs/true"
+PLOTS_DIR = "./toad/plots/true"
+RUN_DIR = "./toad/runs/true"
 DISTANCES = [Distance.CVM, Distance.WASS_LOG, Distance.STAT]
 DISTANCE_QUANTILE = 0.001
 PAPER_POSTERIORS = [0.15, 0.0, 0.85]

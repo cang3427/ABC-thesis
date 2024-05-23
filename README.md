@@ -1,4 +1,4 @@
-# ABC-thesis
+# ABC-with-Statistical-Distances-for-Model-Selection
 
 Python code used for the experimental analysis in the thesis "Approximate Bayesian Computation with Statistical Distances for Model Selection" by Christian Angelopoulos.
 

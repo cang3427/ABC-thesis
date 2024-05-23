@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from common.distances import Distance, DISTANCE_LABELS
 from toad.toad_utils import Model
 
-RESULTS_DIR = "toad/results"
-PLOTS_DIR = "toad/plots"
+RESULTS_DIR = "./toad/results"
+PLOTS_DIR = "./toad/plots"
 DISTANCES = [Distance.CVM, Distance.WASS, Distance.WASS_LOG, Distance.STAT]
 DISTANCE_QUANTILES = [0.01, 0.005, 0.001]
 MODEL = Model.RANDOM

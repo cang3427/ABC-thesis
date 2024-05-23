@@ -1,6 +1,5 @@
 import numpy as np
 import os, sys
-import math
 import random
 from common.distances import Distance
 from common.abc_posterior import abc_posterior

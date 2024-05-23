@@ -6,7 +6,7 @@ NUM_TO_GENERATE = 100
 NULL_MEAN = 3
 VAR = 1
 PRIOR_VAR_SCALE = 100
-MODEL = 1
+MODEL = 0
 SAVE_DIR = f"./normal/observed_data/m{MODEL}"
 
 if __name__ == "__main__":

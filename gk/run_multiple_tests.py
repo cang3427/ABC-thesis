@@ -41,8 +41,7 @@ def worker_process(queue: Queue, lock: Lock) -> None:
     while True:
         with lock:
             if queue.empty():
-                return
-            
+                return       
             args = queue.get()
         
         main(*args)

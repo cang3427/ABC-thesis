@@ -14,7 +14,7 @@ if __name__ == "__main__":
     support = np.arange(0.01, 10, 0.001)
     plt.plot(support, expon.pdf(support, scale=MODEL_MEAN), color='k', label=f"Exp({1 / MODEL_MEAN})", zorder=2)
     plt.plot(support, lognorm.pdf(support, s=1.0, scale=np.exp(np.log(MODEL_MEAN) - 0.5)), color='dimgrey', label=f"Lognormal(log({MODEL_MEAN}) - 0.5, 1)", zorder=1)
-    plt.plot(support, gamma.pdf(support, a=2.0, scale=MODEL_MEAN / 2), color='silver', label=f"Gamma(2, {MODEL_MEAN / 2})", zorder=0)
+    plt.plot(support, gamma.pdf(support, a=2.0, scale=MODEL_MEAN / 2), color='silver', label=f"Gamma(2, {2.0 / MODEL_MEAN})", zorder=0)
 
     plt.legend()
     plt.ylim(bottom=0)

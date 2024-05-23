@@ -50,7 +50,6 @@ if __name__ == "__main__":
         for i in range(NUM_RUNS):
             data_path = os.path.join(observed_size_dir, f"sample{i}.npy")
             data = np.load(data_path)
-            
             posterior_probs[i] = [posterior_prob(data, m) for m in Model]                
             log_bayes_factors[i, 0] = log_bayes_factor(data, Model.EXP, Model.LNORM)
             log_bayes_factors[i, 1] = log_bayes_factor(data, Model.EXP, Model.GAMMA)

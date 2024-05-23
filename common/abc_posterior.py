@@ -1,5 +1,4 @@
 import numpy as np
-from math import inf
 
 def abc_posterior(models: np.ndarray, distances: np.ndarray, num_models: int, distance_quantile: float = 0.01) -> np.ndarray:
     # Convert any nan values to infinity

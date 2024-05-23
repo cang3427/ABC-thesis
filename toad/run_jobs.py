@@ -12,7 +12,7 @@ def worker_process(queue: Queue, lock: Lock) -> None:
         
         main(*args)
     
-def run_jobs(args: Iterator[Tuple[Distance, str, str]], num_workers: int) -> None:
+def run_jobs(args: Iterator[Tuple[Distance, str, str]], num_workers: int = 1) -> None:
     with Manager() as manager:
         taskQueue = manager.Queue()
         taskLock = manager.Lock()

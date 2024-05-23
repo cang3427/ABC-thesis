@@ -4,10 +4,9 @@ import os, sys
 import numpy as np
 from toad.toad_utils import summarise_sample
 
-OBSERVED_PATH = "toad/data/observed_data.npy"
+OBSERVED_PATH = "./toad/data/observed_data.npy"
 PLOT_DIR = "./toad/plots/density"
 LAGS = [1, 2, 4, 8]
-MODEL_COLOURS = ["black", "dimgrey", "silver"]
 
 if __name__ == "__main__":
     if not os.path.exists(OBSERVED_PATH):

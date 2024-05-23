@@ -33,7 +33,7 @@ def cramer_von_mises_distance(observed_sample: np.ndarray, simulated_sample: np.
         
     return distance
 
-def wasserstein_distance(observed_sample: np.ndarray, simulated_sample: np.ndarray, observed_is_sorted=True) -> float:
+def wasserstein_distance(observed_sample: np.ndarray, simulated_sample: np.ndarray, observed_is_sorted: bool = True) -> float:
     observed_size = len(observed_sample)
     simulated_size = len(simulated_sample)
     if observed_size == simulated_size:
@@ -50,7 +50,7 @@ def wasserstein_distance(observed_sample: np.ndarray, simulated_sample: np.ndarr
 
     return wass_distance(observed_sample.flatten(), simulated_sample.flatten())
 
-def gaussian_kernel(sq_distances, sigma) -> np.ndarray:
+def gaussian_kernel(sq_distances: np.ndarray, sigma: float) -> np.ndarray:
     return np.exp(-sq_distances / (2 * sigma))
 
 def maximum_mean_discrepancy(observed_sample: np.ndarray, simulated_sample: np.ndarray, observed_sq_distances=None, sigma=None) -> float: 
